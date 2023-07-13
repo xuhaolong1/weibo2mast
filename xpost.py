@@ -85,7 +85,7 @@ If RECURSIVE is True, also include url's from original post."""
     return url_list
 
 
-def upload_media(url_list, max_attatchment):
+def upload_media(url_list, max_attatchment, mast):
     """Upload media in URL_LIST.
 URL_LIST should be a list of MEDIA_URL. Return (TOOT_LIST, TOO_LARGE,
 TOO_MANY). TOOT_LIST is a list of TOOT_DICT.
@@ -111,12 +111,13 @@ TOO_MANY). TOOT_LIST is a list of TOOT_DICT.
     return (media_list, media_too_large, media_too_many)
 
 
+
 def cross_post(post, mast_dict, config, db, fallback_mast=None):
     """Cross-post POST to mastodon.
-MAST_DICT is a hash map from weibo author ids (string) to Mastodon
-instances. Return a list of POST_RECORD. FALLBACK_MAST is used when we
-cannot find a Mastodon instance from dict for the weibo author.
-"""
+    MAST_DICT is a hash map from weibo author ids (string) to Mastodon
+    instances. Return a list of POST_RECORD. FALLBACK_MAST is used when we
+    cannot find a Mastodon instance from dict for the weibo author.
+    """
     if not should_cross_post(post, config, db):
         return []
 
@@ -133,23 +134,21 @@ cannot find a Mastodon instance from dict for the weibo author.
     post_record_list = []
     orig_toot_id = None
 
-    # Maybe upload media.
+    # Maybe upload media. instance to toot with')
     url_list = collect_media_url(post, not standalone_repost)
     media_list = None
     media_too_large = False
     media_too_many = False
-    if not external_media:
-        media_list, media_too_large, media_too_many = \
-            upload_media(url_list, max_attatchment)
-
     # Come up with a Mastodon instance for tooting.
     mast = mast_dict.get(user_id)
-    if mast == None:
-        if fallback_mast != None:
+    if mast is None:
+        if fallback_mast is not None:
             mast = fallback_mast
         else:
             raise KeyError('Couldn\'t find a Mastodon instance to toot with')
-
+    if not external_media:
+        media_list, media_too_large, media_too_many = \
+            upload_media(url_list, max_attatchment, mast)
     # Compose toot.
     # 1. Compose body text.
     body = '#{0}_bot\n\n{1}\n\n'.format(
